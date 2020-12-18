@@ -17,7 +17,7 @@ Authors: [Chris Wallace](https://github.com/chr1swallace), [Stasia Grinberg](htt
 Clean and tidy input data
 
 ```{sh}
-Rscript -e 'rmarkdown::render("load-and-explore-data.Rmd")'
+Rscript -e 'rmarkdown::render("load-and-explore-data.Rmd",output_dir="docs")'
 ```
 
 Generate different ML probabilistic predictions
@@ -32,18 +32,18 @@ Rscript create_prob_grid.R > create_prob_grid.log 2>&1 ## create grid for plotti
 
 Compare different ML methods ("bake off")
 ```{sh}
-Rscript -e 'rmarkdown::render("bake-off.Rmd")'
+Rscript -e 'rmarkdown::render("bake-off.Rmd",output_dir="docs")'
 ```
 
 ## Estimate seroprevalence
 ```{sh}
-Rscript -e 'rmarkdown::render("population-inference.Rmd")'
+Rscript -e 'rmarkdown::render("population-inference.Rmd",output_dir="docs")'
 ```
 
 
 ## Patient data
 
 ```{sh}
-Rscript -e 'rmarkdown::render("explore-patient-data.Rmd")'
+Rscript -e 'rmarkdown::render("explore-patient-data.Rmd",output_dir="docs")'
 ```
 
