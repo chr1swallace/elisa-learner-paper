@@ -199,4 +199,6 @@ options(digits=6)
 kable(probs[Week!="Combined"][order(type,Week),.(type,Week,N,estimate=qm,lower.ci=ll,upper.ci=ul)])
 fwrite(probs[Week!="Combined"][order(type,Week),.(type,Week,N,estimate=qm,lower.ci=ll,upper.ci=ul)],
        file=file.path(d,"estimates.csv"))
+fwrite(probs[Week!="Combined"][order(type,Week),.(type,Week,N,estimate=qm,lower.ci=ll,upper.ci=ul)],
+       file=file.path("estimates.csv"))
 ```
