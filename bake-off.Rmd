@@ -74,6 +74,7 @@ res.x <- cbind(res.x,
 res.x[,pr.3sd:=pr.3sd.rbd * pr.3sd.spk]
 res.x[,pr.6sd:=pr.6sd.rbd * pr.6sd.spk]
 res.x[,pr.ens2:=(pr.svm2+pr.lda)/2]
+res.x[,pr.loglda:=(pr.logreg+pr.lda)/2]
 
 res.x <- melt(res.x,
             c("fold.nm","SPIKE","RBD","group","type"),
@@ -220,6 +221,7 @@ thr.spk6 <- mean(spk) + 6 * sd(spk)
 
 prob.grd <- readRDS(file.path(d, "probability_grid_no12.rds"))
 RES <- readRDS(file.path(d, "predictions_on_test_set.rds"))
+RES[,prob.LOGLDA:=(prob.LOG + prob.LDA)/2]
 RES <- melt(RES, measure.vars = grep("status",names(RES),value=TRUE))
 #c("status.SVM", "status.LDA", "status.ENS","status.LOG","status.ENS.LOG"))
 RES[, method := sub("status\\.", "", variable)]
@@ -267,7 +269,10 @@ geom_hline(data = prob.grd, aes(yintercept = thr.spk6, linetype = "6sd"), colour
 geom_vline(data = prob.grd, aes(xintercept = thr.rbd6, linetype = "6sd"), colour = "#BB3754FF", show.legend = FALSE) +
 scale_linetype_manual(name = 'sd method', values = c(1, 2), guide = guide_legend(override.aes = list(linetype = c("solid", "dashed")))) +
 xlab("log(RBD)") + ylab("log(SPIKE)") +
-facet_grid(mod ~ method) + theme_cowplot(font_size = 12) + background_grid()
+  facet_grid(mod ~ method) +
+  theme_cowplot(font_size = 12) +
+  theme(legend.position="bottom") +
+  background_grid()
 p2
 
 ```
