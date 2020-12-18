@@ -6,6 +6,7 @@ date: "`r format(Sys.time(), '%d %B %Y')`"
 output: html_document
 ---
 
+
 ```{r, echo=FALSE, results=FALSE}
 library(knitr)
 knitr::opts_chunk$set(fig.width=12, fig.height=8)
@@ -277,6 +278,31 @@ p2
 
 ```
 
+```{r}
+myCol2[2] <- "grey40"
+library(ggnewscale)
+p3 =ggplot() +
+geom_contour(data = prob.grd[method %in% c("LDA","SVM","ENS")], aes(x = RBD, y = SPIKE, z = covid.prob, colour = ..level..), show.legend = FALSE) +
+scale_color_gradient(low = myCol2[3], high = myCol2[1]) +
+geom_raster(data = prob.grd[method %in% c("LDA","SVM","ENS")], aes(x = RBD, y = SPIKE, fill = covid.prob), alpha = 0.5) +
+scale_fill_gradient(name ="Prob(COVID)", low = myCol2[3], high = myCol2[1],breaks=c(0,1),limits=c(0,1)) +
+  new_scale("fill") +
+  ## scale_colour_manual(name = "Samples", values = myCol2[c(3, 1, 2)]) +
+  scale_fill_manual(name = "Samples", values = myCol2[c(3, 1, 2)]) +
+geom_point(data = X[!is.na(status)], aes(x = SPIKE, y = RBD, fill = status), alpha = 0.7, size = 3,pch=21) +
+scale_x_continuous(trans = "log2") + scale_y_continuous(trans = "log2") +
+geom_hline(data = prob.grd[method %in% c("LDA","SVM","ENS")], aes(yintercept = thr.spk3, linetype = "3sd"), colour = "#BB3754FF") +
+geom_vline(data = prob.grd[method %in% c("LDA","SVM","ENS")], aes(xintercept = thr.rbd3, linetype = "3sd"), colour = "#BB3754FF", show.legend = FALSE) +
+geom_hline(data = prob.grd[method %in% c("LDA","SVM","ENS")], aes(yintercept = thr.spk6, linetype = "6sd"), colour = "#BB3754FF") +
+geom_vline(data = prob.grd[method %in% c("LDA","SVM","ENS")], aes(xintercept = thr.rbd6, linetype = "6sd"), colour = "#BB3754FF", show.legend = FALSE) +
+scale_linetype_manual(name = 'sd method', values = c(1, 2), guide = guide_legend(override.aes = list(linetype = c("solid", "dashed")))) +
+xlab("log(RBD)") + ylab("log(SPIKE)") +
+  facet_grid(mod ~ method) +
+  theme_cowplot(font_size = 12) +
+  theme(legend.position="bottom") +
+  background_grid()
+p3
+```
 
 # Methods
 
