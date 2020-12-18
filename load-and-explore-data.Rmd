@@ -1,0 +1,235 @@
+Load data (hidden)
+
+```{r, echo=FALSE,results=FALSE}
+library(knitr)
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=FALSE, warning=FALSE, message=FALSE)
+source("common.R")
+
+## load Wk 17-21 data 
+library(readxl)
+(nm <- excel_sheets(file_xlsx_v3))
+data <- lapply(seq_along(nm), function(i) {
+  x <- read_xlsx(file_xlsx_v3,sheet=i)  %>% as.data.table()
+  setnames(x,make.names(names(x)))
+  x$OD  %<>% as.numeric()
+  x$nm <- nm[i]
+  x
+  ## message(i)
+  ## print(sapply(x,class))
+})
+names(data) <- make.names(nm)
+lapply(data, names) ##check
+setnames(data[[6]],"Antigen","Ag")
+## some pairs are in same order - exploit that
+for(i in c(2,3,4,5,6)) {
+  data[[i]][,nm:=nm[i]][,rowid:=1:.N]
+}
+x3=data[-1]
+
+## add controls
+
+
+## add some more negative controls.
+## v8 - 
+## I ran an additional 33 individuals who are PCR+ staff members at the hospital, and some controls. 
+## I have run another 300 spring 2019 controls for S and RBD, attached. 
+x8a=read_xlsx(file_xlsx_v8[[1]],sheet=1) %>% as.data.table()
+x8b=read_xlsx(file_xlsx_v8[[2]],sheet=1) %>% as.data.table()
+names(x8a)[1]="Sample ID" # funny chararcter in "Sample ID "
+x8=rbind(x8a,x8b,fill=TRUE)
+setnames(x8, make.names(names(x8)))
+setnames(x8, "Antigen","Ag") # to match previous
+setnames(x8, "Collection.date","Sampling.date") # to match previous
+x8$OD  %<>% as.numeric()
+x8[,nm:="201007"]
+x8[is.na(Assay.date),Assay.date:=201007] # some entries missing
+x8=x8[grepl("No S Ctrl|Spring2019",Sample.ID)]
+
+## combine
+data <- c(x3, list(x8))  %>% rbindlist(., fill=TRUE)
+
+## label nicely
+m <- copy(data)
+sample(m$Sample.ID,100)
+m[,group:=sub(" .*","",nm)]
+m[Sample.ID %in% c("No S C","No S Ctrl","NO S C"), type:="No sample control"]
+m[Sample.ID=="P4", type:="Patient 4"]
+m[Status=="COVID PCR+",type:="COVID"]
+m[grepl("^P Wk|^p Wk|^P WK",Sample.ID), type:="Pregnant volunteers"] # fix case typo
+m[grepl("^Wk",Sample.ID), type:="Blood donors"]
+m[grepl("^Sp2019|Spring2019|B1q",Sample.ID), type:="Historical controls"]
+m[type %in% c("Pregnant volunteers","Historical donors"),Sample.ID:=gsub("WK|wk","Wk",Sample.ID)]
+m[,stype:=factor(type)][,stype:=relevel(stype,"Historical controls")]
+## with(m[is.na(type)], sample(Sample.ID,100))
+head(m[is.na(type)])
+tail(m[is.na(type)])
+m[!is.na(Assay.date),
+  adate:=as.Date(paste0("20",Assay.date),format="%Y%m%d")]
+head(m[Plate==1])
+tail(m[Plate==1])
+
+```
+
+## adjust OD by no sample controls
+
+examine outlier in spike control
+```{r}
+
+m[type=="No sample control" & Plate=="!",.(Ag,type,Plate,OD)][order(Ag,OD)]
+head(sort(m[type=="No sample control"]$OD))
+```
+
+calculate mean of non-outlier controls and normalise, then reshape wide
+```{r}
+norm.plate <- m[type=="No sample control" & OD>0.03, # one outlier control
+                .(control.plate=mean(OD)),by=c("Ag","Plate")]
+norm.date <- m[type=="No sample control" & OD>0.03, # one outlier control
+               .(control.date=mean(OD)),by=c("Ag","adate")]
+m <- merge(m,norm.plate,by=c("Ag","Plate"),all.x=TRUE)
+m <- merge(m,norm.date,by=c("Ag","adate"),all.x=TRUE)
+
+m[,NOD:=OD*mean(norm.plate$control.plate) /
+     ifelse(is.na(control.plate),control.date,control.plate)]
+
+## no more need of no s c
+m <- m[type!="No sample control"]
+mm1 <- merge(m[group %in% c("BD","Preg") & Ag=="SPIKE"],
+            m[group %in% c("BD","Preg") & Ag=="RBD"],
+            by=c("group","Sample.ID","rowid","type","stype"),
+            suffixes=c(".spike",".rbd"))[,rowid:=NULL]
+mm2 <- merge(m[group %in% c("COVID19") & Ag=="SPIKE"],
+            m[group %in% c("COVID19") & Ag=="RBD"],
+            by=c("group","Sample.ID","type","stype"),
+            suffixes=c(".spike",".rbd"))[,rowid.spike:=NULL][,rowid.rbd:=NULL]
+mm3 <- merge(m[group %in% c("201007") & Ag=="SPIKE"],
+            m[group %in% c("201007") & Ag=="RBD"],
+            by=c("group","Sample.ID","type","stype"),
+            suffixes=c(".spike",".rbd"))[,rowid.spike:=NULL][,rowid.rbd:=NULL]
+mm <- rbind(mm1,mm2,mm3)
+setnames(mm,c("NOD.rbd","NOD.spike"),c("RBD","SPIKE"))
+
+plot.adjusted <- ggplot(mm[type!="No sample control"][order(stype,decreasing=TRUE)],
+                        aes(x=SPIKE,y=RBD,col=type)) +
+  geom_point(alpha=0.7) + # strongly correlated
+  ## geom_density2d() +
+  facet_wrap(~group) +
+  background_grid() +
+  scale_x_log10() +
+  scale_y_log10()+ theme(legend.position="bottom") + ggtitle("Adjusted OD")
+plot.adjusted
+m <- mm
+```
+
+
+## count
+Table of sample numbers in each class
+```{r}
+with(m,table(group,type,exclude=NULL))
+with(m,table(assay.date=adate.rbd,type,exclude=NULL))
+with(m,table(assay.date=adate.spike,type,exclude=NULL))
+```
+
+## check distributions match those from Xaq
+```{r}
+plot_grid(ggplot(m, aes(x=group,col=type,y=OD.spike)) + geom_boxplot() + theme(legend.position="bottom"),
+          ggplot(m, aes(x=group,col=type,y=OD.rbd)) + geom_boxplot() + theme(legend.position="bottom"))
+```
+
+SPIKE and RBD are correlated in raw data too
+
+```{r,echo=FALSE}
+plot.raw <- ggplot(m[type!="No sample control"][order(stype,decreasing=TRUE)],
+                   aes(x=OD.spike,y=OD.rbd,col=type)) +
+  geom_point(alpha=0.7) + # strongly correlated
+  ## geom_density2d() +
+  facet_wrap(~group) +
+  ## facet_grid(group~type) +
+  background_grid() +
+  scale_x_log10() +
+  scale_y_log10()+ theme(legend.position="bottom") + ggtitle("Raw OD")
+plot.raw
+
+```
+normalisation improves coefficient of variation (COV) for patient samples, but not historical controls - because these are just noise?
+```{r}
+m[type=="Patient 4",.(Ag="SPIKE",
+                      raw=sd(log(OD.spike))/mean(log(OD.spike)),
+                      adj=sd(log(SPIKE))/mean(log(SPIKE))),by="type"]
+m[type=="Patient 4",.(Ag="RBD",
+                      raw=sd(log(OD.rbd))/mean(log(OD.rbd)),
+                      adj=sd(log(RBD))/mean(log(RBD))),by="type"]
+m[type=="COVID",.(Ag="SPIKE",
+                      raw=sd(log(OD.spike))/abs(mean(log(OD.spike))),
+                      adj=sd(log(SPIKE))/abs(mean(log(SPIKE)))),by="type"]
+m[type=="COVID",.(Ag="RBD",
+                      raw=sd(log(OD.rbd))/abs(mean(log(OD.rbd))),
+                      adj=sd(log(RBD))/abs(mean(log(RBD)))),by="type"]
+m[type=="Historical controls",.(Ag="SPIKE",
+                      raw=sd(log(OD.spike))/abs(mean(log(OD.spike))),
+                      adj=sd(log(SPIKE))/abs(mean(log(SPIKE)))),by=c("type","group")]
+m[type=="Historical controls",.(Ag="RBD",
+                      raw=sd(log(OD.rbd))/abs(mean(log(OD.rbd))),
+                      adj=sd(log(RBD))/abs(mean(log(RBD)))),by=c("type","group")]
+```
+
+Adjustment also improves comparison of distributions for same
+samples in blood/pregnant donor groups
+
+```{r}
+with(m[type=="Historical controls"], kruskal.test(OD.spike,group))
+with(m[type=="Historical controls"], kruskal.test(SPIKE,group))
+with(m[type=="Historical controls"], kruskal.test(OD.rbd,group))
+with(m[type=="Historical controls"], kruskal.test(RBD,group))
+```
+
+but doesn't improve individual-level correlation in controls - again presumably because these are true zeros, and noise shouldn't correlate between experiments
+
+## to examine learners, need to add folds, ensuring that samples from the same individual fall into the same fold
+```{r}
+set.seed(42)
+muniq <- m[!duplicated(Sample.ID) & type %in% c("Historical controls","COVID"),
+           .(Sample.ID, type, group, rowid)]
+
+nfolds=10
+totfolds=sum(1:nfolds)
+
+## stratified folds
+muniq <- muniq[sample(1:.N)]
+muniq[,fold1:=1:.N %% nfolds + 1,by="type"]
+muniq <- muniq[sample(1:.N)]
+muniq[,fold2:=1:.N %% nfolds + 1,by="type"]
+muniq <- muniq[sample(1:.N)]
+muniq[,fold3:=1:.N %% nfolds + 1,by="type"]
+
+## random folds
+muniq <- muniq[sample(1:.N)]
+muniq[,fold4:=1:.N %% nfolds + 1]
+muniq <- muniq[sample(1:.N)]
+muniq[,fold5:=1:.N %% nfolds + 1]
+muniq <- muniq[sample(1:.N)]
+muniq[,fold6:=1:.N %% nfolds + 1]
+
+## unbalanced folds
+muniq[type=="Historical controls",fold7:=sample(1:nfolds,.N,replace=TRUE)]
+muniq[type=="COVID",fold7:=sample(1:nfolds,.N,prob=((1:nfolds)/totfolds)^0.1,replace=TRUE)]
+muniq[type=="Historical controls",fold8:=sample(1:nfolds,.N,replace=TRUE)]
+muniq[type=="COVID",fold8:=sample(1:nfolds,.N,prob=((1:nfolds)/totfolds)^0.1,replace=TRUE)]
+muniq[type=="Historical controls",fold9:=sample(1:nfolds,.N,replace=TRUE)]
+muniq[type=="COVID",fold9:=sample(1:nfolds,.N,prob=((1:nfolds)/totfolds)^0.1,replace=TRUE)]
+
+table(muniq$fold1,muniq$type)
+table(muniq$fold4,muniq$type)
+table(muniq$fold7,muniq$type)
+
+m  %<>% cbind(., muniq[match(m$Sample.ID, Sample.ID), paste0("fold",1:9), with=FALSE])
+
+## rename for compatability
+m[group=="BD",group:="Blood Donors"]
+m[group=="Preg",group:="Pregnant volunteers"]
+m[group=="COVID19",group:="COVID+"]
+
+m <- m[,.(group,type,rowid,Sample.ID,OD.spike,OD.rbd,SPIKE,RBD,fold1,fold2,fold3,fold4,fold5,fold6,fold7,fold8,fold9)]
+## save
+save(m, file=file_rdata, version=2)
+```
