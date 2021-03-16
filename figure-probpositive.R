@@ -89,3 +89,7 @@ ggsave("ens-probabilities-hist.png",height=4*w,width=4*w)
 
 xx <- x[,.(group,type,Sample.ID,SPIKE,RBD,prob.ENS,prob.3sd,prob.6sd)]
 fwrite(xx, file="ens-probabilities.csv")
+
+
+message("all done")
+message(date())

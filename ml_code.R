@@ -214,6 +214,9 @@ save(res, res.x, file = file.path(d,"ml_results.RData"))
  # q('no')
 #----------------------------------------------------------------------------------------------------------
 
+message("all done")
+message(date())
+
 #
 # ###analysis
 # ind <- which(dat$Sample.ID %in% c("1", "2", "10", "Sp2019 158"))[-1] #double Sp2019 158, only need the second one

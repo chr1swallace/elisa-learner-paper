@@ -46,3 +46,7 @@ prob.grd <- lapply(1 : nrow(grd), FUN = function(i) {
 prob.grd <- melt(prob.grd, c("SPIKE", "RBD"))
 setnames(prob.grd, c("variable", "value"), c("method", "covid.prob"))
 saveRDS(prob.grd,file.path(d, "probability_grid_no12.rds"))
+
+
+message("all done")
+message(date())

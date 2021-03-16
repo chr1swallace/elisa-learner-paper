@@ -548,31 +548,31 @@ ggplot(cfd,aes(x=nm,y=exp(-Estimate),
 
 ```
 
-# Notes from Xaq
+<!-- # Notes from Xaq -->
 
-> In our cross-sectional patient cohort, IgG levels trended upward for the first two months post disease onset, whilst IgM and IgA went in the opposing direction
+<!-- > In our cross-sectional patient cohort, IgG levels trended upward for the first two months post disease onset, whilst IgM and IgA went in the opposing direction -->
 
-Agreed, evidenced in the multivariate analysis above
+<!-- Agreed, evidenced in the multivariate analysis above -->
 
-> We found anti-viral antibody levels to increase with disease severity (P = X), supporting the lower titres observed in healthy cohort participants. This was most pronounced for anti-RBD IgA, indicative of advancing mucosal disease (P, Fig X).
+<!-- > We found anti-viral antibody levels to increase with disease severity (P = X), supporting the lower titres observed in healthy cohort participants. This was most pronounced for anti-RBD IgA, indicative of advancing mucosal disease (P, Fig X). -->
 
-Agreed, evidenced in the multivariate analysis above.  No single p value, you get one per antibody (see tables above).  Note that for IgA and IL-6 there is a trend for higher levels with severity 3, while for IgM and IgG there is a trend for higher levels with severity 2, though these differences are not significant.  The differences with severity 1 are mostly significant.
+<!-- Agreed, evidenced in the multivariate analysis above.  No single p value, you get one per antibody (see tables above).  Note that for IgA and IL-6 there is a trend for higher levels with severity 3, while for IgM and IgG there is a trend for higher levels with severity 2, though these differences are not significant.  The differences with severity 1 are mostly significant. -->
 
-> females showed lower anti-viral IgA levels than males in non-hospitalised and hospitalised groups (Supp Fig X),
+<!-- > females showed lower anti-viral IgA levels than males in non-hospitalised and hospitalised groups (Supp Fig X), -->
 
-This is seen in the raw data, and is nominally significant for RBD IgA in the multivariate analysis. However, given the number of tests for a relationship with sex, it wouldn't survive any form of multiple testing correction, so I wouldn't make a big deal of it unless there is some prior finding you are trying to replicate.
+<!-- This is seen in the raw data, and is nominally significant for RBD IgA in the multivariate analysis. However, given the number of tests for a relationship with sex, it wouldn't survive any form of multiple testing correction, so I wouldn't make a big deal of it unless there is some prior finding you are trying to replicate. -->
 
-> In agreement with older individuals being more susceptible to COVID-19, and the effect of ageing on the human immune system (ref, ref, ref), date of birth was negatively correlated with all features in the dataset (Fig X).
+<!-- > In agreement with older individuals being more susceptible to COVID-19, and the effect of ageing on the human immune system (ref, ref, ref), date of birth was negatively correlated with all features in the dataset (Fig X). -->
 
-This is seen on univariate analyses, but not multivariate.  I interpret this as features being positively correlated with Severity, and older ages over-represented in more severe groups.  The fact that severity remains highly significant in multivariate analysis while Year of birth does not, suggests to me that Severity to a greater degree than age drives the differences in measures.
+<!-- This is seen on univariate analyses, but not multivariate.  I interpret this as features being positively correlated with Severity, and older ages over-represented in more severe groups.  The fact that severity remains highly significant in multivariate analysis while Year of birth does not, suggests to me that Severity to a greater degree than age drives the differences in measures. -->
 
-> Disease severity and IgA levels also correlated with elevated serum IL-6
+<!-- > Disease severity and IgA levels also correlated with elevated serum IL-6 -->
 
-Agreed
+<!-- Agreed -->
 
-> As observed for antibody titres, patients showed a large range of neutralisation capacity, with increased anti-viral antibody levels, and intensive care occupancy, correlating with increased neutralisation capacity. Importantly, neutralisation was more strongly associated with anti-RBD, than anti-spike levels for all isotypes (Fig X), with anti-RBD IgG the strongest predictor of neutralisation capacity. 
+<!-- > As observed for antibody titres, patients showed a large range of neutralisation capacity, with increased anti-viral antibody levels, and intensive care occupancy, correlating with increased neutralisation capacity. Importantly, neutralisation was more strongly associated with anti-RBD, than anti-spike levels for all isotypes (Fig X), with anti-RBD IgG the strongest predictor of neutralisation capacity.  -->
 
-This appears to be true, though you need to be cautious about making claims for RBD vs Spike, unless you are absolutely sure that assays for each have identical levels of noise.
+<!-- This appears to be true, though you need to be cautious about making claims for RBD vs Spike, unless you are absolutely sure that assays for each have identical levels of noise. -->
 
 
 # Notes for methods

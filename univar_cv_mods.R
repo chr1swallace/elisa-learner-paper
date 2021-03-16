@@ -227,6 +227,8 @@ res.spk.x <- lapply(res.spk.x, FUN = function(z) {
 save(res.rbd, res.spk, res.rbd.x, res.spk.x,
      file = file.path(d,"univar_results.RData"))
 
+message("all done")
+message(date())
 
 
 

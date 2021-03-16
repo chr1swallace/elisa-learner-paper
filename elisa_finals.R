@@ -147,3 +147,6 @@ ggplot(X, aes(x = log(SPIKE), y = log(RBD), colour = status)) + geom_point(alpha
 
 
 ##
+
+message("all done")
+message(date())
