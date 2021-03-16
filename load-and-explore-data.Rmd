@@ -46,19 +46,37 @@ x8[,nm:="201007"]
 x8[is.na(Assay.date),Assay.date:=201007] # some entries missing
 x8=x8[grepl("No S Ctrl|Spring2019",Sample.ID)]
 
+## dec 2020
+x9=read_xlsx(file_xlsx_v9) %>% as.data.table()
+setnames(x9, make.names(names(x9)))
+setnames(x9, "Sample.ID.","Sample.ID") # to match previous
+setnames(x9, "Antigen","Ag") # to match previous
+setnames(x9, "Collection.date","Sampling.date") # to match previous
+x9$OD  %<>% as.numeric()
+x9[,nm:="201216"]
+
+## 2021
+x10=read_xlsx(file_xlsx_v10) %>% as.data.table()
+ setnames(x10, make.names(names(x10)))
+setnames(x10, "Sample.ID.","Sample.ID") # to match previous
+setnames(x10, "Antigen","Ag") # to match previous
+setnames(x10, "Collection.date","Sampling.date") # to match previous
+x10$OD  %<>% as.numeric()
+x10[,nm:="210308"]
+  
 ## combine
-data <- c(x3, list(x8))  %>% rbindlist(., fill=TRUE)
+data <- c(x3, list(x8,x9,x10))  %>% rbindlist(., fill=TRUE)
 
 ## label nicely
 m <- copy(data)
 sample(m$Sample.ID,100)
 m[,group:=sub(" .*","",nm)]
-m[Sample.ID %in% c("No S C","No S Ctrl","NO S C"), type:="No sample control"]
+m[Sample.ID %in% c("No S  C","No S C","No S Ctrl","NO S C"), type:="No sample control"]
 m[Sample.ID=="P4", type:="Patient 4"]
 m[Status=="COVID PCR+",type:="COVID"]
 m[grepl("^P Wk|^p Wk|^P WK",Sample.ID), type:="Pregnant volunteers"] # fix case typo
-m[grepl("^Wk",Sample.ID), type:="Blood donors"]
-m[grepl("^Sp2019|Spring2019|B1q",Sample.ID), type:="Historical controls"]
+m[grepl("^Wk|^BD Wk|^BD WK",Sample.ID), type:="Blood donors"]
+m[grepl("^Sp2019|Spring2019|Spring 2019|B1q",Sample.ID), type:="Historical controls"]
 m[type %in% c("Pregnant volunteers","Historical donors"),Sample.ID:=gsub("WK|wk","Wk",Sample.ID)]
 m[,stype:=factor(type)][,stype:=relevel(stype,"Historical controls")]
 ## with(m[is.na(type)], sample(Sample.ID,100))
@@ -68,7 +86,6 @@ m[!is.na(Assay.date),
   adate:=as.Date(paste0("20",Assay.date),format="%Y%m%d")]
 head(m[Plate==1])
 tail(m[Plate==1])
-
 ```
 
 ## adjust OD by no sample controls
@@ -89,8 +106,8 @@ norm.date <- m[type=="No sample control" & OD>0.03, # one outlier control
 m <- merge(m,norm.plate,by=c("Ag","Plate"),all.x=TRUE)
 m <- merge(m,norm.date,by=c("Ag","adate"),all.x=TRUE)
 
-m[,NOD:=OD*mean(norm.plate$control.plate) /
-     ifelse(is.na(control.plate),control.date,control.plate)]
+m[,NOD:=exp( log(OD) * mean(log(norm.plate$control.plate)) /
+     ifelse(is.na(control.plate),log(control.date),log(control.plate)) )]
 
 ## no more need of no s c
 m <- m[type!="No sample control"]
@@ -106,7 +123,15 @@ mm3 <- merge(m[group %in% c("201007") & Ag=="SPIKE"],
             m[group %in% c("201007") & Ag=="RBD"],
             by=c("group","Sample.ID","type","stype"),
             suffixes=c(".spike",".rbd"))[,rowid.spike:=NULL][,rowid.rbd:=NULL]
-mm <- rbind(mm1,mm2,mm3)
+mm4 <- merge(m[group %in% c("201216") & Ag=="SPIKE"],
+            m[group %in% c("201216") & Ag=="RBD"],
+            by=c("group","Sample.ID","type","stype"),
+            suffixes=c(".spike",".rbd"))[,rowid.spike:=NULL][,rowid.rbd:=NULL]
+mm5 <- merge(m[group %in% c("210308") & Ag=="SPIKE"],
+            m[group %in% c("210308") & Ag=="RBD"],
+            by=c("group","Sample.ID","type","stype"),
+            suffixes=c(".spike",".rbd"))[,rowid.spike:=NULL][,rowid.rbd:=NULL]
+mm <- rbind(mm1,mm2,mm3,mm4,mm5)
 setnames(mm,c("NOD.rbd","NOD.spike"),c("RBD","SPIKE"))
 
 plot.adjusted <- ggplot(mm[type!="No sample control"][order(stype,decreasing=TRUE)],
@@ -120,6 +145,7 @@ plot.adjusted <- ggplot(mm[type!="No sample control"][order(stype,decreasing=TRU
 plot.adjusted
 m <- mm
 ```
+
 
 
 ## count

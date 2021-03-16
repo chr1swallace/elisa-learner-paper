@@ -145,8 +145,8 @@ fitone <- function(x,probvar="prob.log",byvars=c("type","Week"),M=1000) {
 
 ## per group and week
 m <- "ENS"
-probs <- fitone(x,paste0("prob.",m),byvars=c("type","Week"))
-probs[order(type,Week),.(type,Week,N,estimate=qm,lower.ci=ll,upper.ci=ul)]
+probs1 <- fitone(x,paste0("prob.",m),byvars=c("type","Week"))
+probs1[order(type,Week),.(type,Week,N,estimate=qm,lower.ci=ll,upper.ci=ul)]
 
 ## per week
 probs2 <- fitone(x,paste0("prob.",m),byvars="Week")[,type:="Combined"]
@@ -156,23 +156,26 @@ probs2[order(Week),.(Week,N,estimate=qm,lower.ci=ll,upper.ci=ul)]
 probs3 <- fitone(x,paste0("prob.",m),byvars="type")[,Week:="Combined"]
 probs3[order(type),.(type,N,estimate=qm,lower.ci=ll,upper.ci=ul)]
 
+## overall
+x[,overall:=TRUE]
+probs4 <- fitone(x, paste0("prob.",m),byvars="overall")[,Week:="Combined"][,type:="Combined"]
+
 ## combine
-probs <- rbind(probs,probs2,probs3)[,method:=m]
+probs <- rbind(probs1,probs2,probs3,probs4,fill=TRUE)[,method:=m]
 probs[,week_num:=as.numeric(sub("Wk","",Week))]
 probs[,type:=factor(type,levels=c("Blood donors","Pregnant volunteers","Combined"))]
 
 pred <- probs
-pred[type=="Combined" & Week=="Wk14",.(Week,method,qm)]
-pred[type=="Combined" & Week=="Wk25",.(Week,method,qm)]
+with(pred,table(Week,type))
 
-tmp <- dcast(pred[type!="Combined" & method=="ENS" & Week!="Wk14"],
+tmp <- dcast(pred[method=="ENS" & Week!="Wk14"],
       Week ~ type, value.var="Est")
 tmp
 setnames(tmp,make.names(names(tmp)))
 tmp[,.(bd=mean(Blood.donors),pv=mean(Pregnant.volunteers))]
 
 
-ggplot(pred[type=="Combined"],aes(x=week_num,y=qm,ymin=ll,ymax=ul#,col=type
+ggplot(pred[type=="Combined" & Week!="Combined"],aes(x=week_num,y=qm,ymin=ll,ymax=ul#,col=type
                                   )) +
   ## geom_smooth(se=FALSE,
   ##             ## method="lm",formula=y~poly(x,3),
@@ -189,16 +192,16 @@ We estimated the proportion of positives in each group using multiple imputation
 
 ```{r}
 library(seaborn)
-ggplot(pred[type!="Combined"],aes(x=week_num+as.numeric(factor(type))/10,
+ggplot(pred[type!="Combined" & Week!="Combined"],aes(x=week_num+as.numeric(factor(type))/10,
                                   y=qm,ymin=ll,ymax=ul,col=type)) +
   geom_pointrange() +
   labs(x="Week",y="Estimated fraction positive") +
   background_grid(major="y") + scale_colour_seaborn()
 
 options(digits=6)
-kable(probs[Week!="Combined"][order(type,Week),.(type,Week,N,estimate=qm,lower.ci=ll,upper.ci=ul)])
-fwrite(probs[Week!="Combined"][order(type,Week),.(type,Week,N,estimate=qm,lower.ci=ll,upper.ci=ul)],
+kable(probs[][order(type,Week),.(type,Week,N,estimate=qm,lower.ci=ll,upper.ci=ul)])
+fwrite(probs[][order(type,Week),.(type,Week,N,estimate=qm,lower.ci=ll,upper.ci=ul)],
        file=file.path(d,"estimates.csv"))
-fwrite(probs[Week!="Combined"][order(type,Week),.(type,Week,N,estimate=qm,lower.ci=ll,upper.ci=ul)],
+fwrite(probs[][order(type,Week),.(type,Week,N,estimate=qm,lower.ci=ll,upper.ci=ul)],
        file=file.path("estimates.csv"))
 ```

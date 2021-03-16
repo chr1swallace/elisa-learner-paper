@@ -152,7 +152,7 @@ p1 <- ggplot(comb[protein=="Both"],
   geom_label_repel(aes(label=methodbase),
                    data=comb[protein=="Both" & method!="mclust-labelled" & fold.type=="stratified"],
                    ## nudge_x=0.001,
-                   nudge_y=-0.1
+                   nudge_y=-0.05
                    ) +
   guides(colour ="none",fill="none",shape= "legend") +
   labs(x="Sensitivity (%)",y="Specificity (%)") +
