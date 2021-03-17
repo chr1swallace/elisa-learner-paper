@@ -67,11 +67,11 @@ svm.mod <- res$mod.svm
 log.mod <- res$mod.log
 svm2.mod <- res$mod.svm2
 
-res <- res$res[, prob.ENS := (prob.SVM + prob.LDA)/2]
-res[, status.ENS := ifelse(prob.ENS > 0.5, "COVID.pred", "Negative.pred")]
+res <- res$res[, prob.SVM_LDA := (prob.SVM + prob.LDA)/2]
+res[, status.SVM_LDA := ifelse(prob.SVM_LDA > 0.5, "COVID.pred", "Negative.pred")]
 
-# res <- res$res[, prob.ENS.LOG := (prob.SVM + prob.LOG)/2]
-# res[, status.ENS.LOG := ifelse(prob.ENS.LOG > 0.5, "COVID.pred", "Negative.pred")]
+# res <- res$res[, prob.SVM_LDA.LOG := (prob.SVM + prob.LOG)/2]
+# res[, status.SVM_LDA.LOG := ifelse(prob.SVM_LDA.LOG > 0.5, "COVID.pred", "Negative.pred")]
 
 saveRDS(res, file = file.path(d,"predictions_on_test_set.rds"))
 save(lda.mod, svm.mod, log.mod, svm2.mod, file = file.path(d,"full_models.RData"))
@@ -84,11 +84,11 @@ svm.mod <- res.x$mod.svm
 log.mod <- res.x$mod.log
 svm2.mod <- res.x$mod.svm2
 
-res.x <- res.x$res[, prob.ENS := (prob.SVM + prob.LDA)/2]
-res.x[, status.ENS := ifelse(prob.ENS > 0.5, "COVID.pred", "Negative.pred")]
+res.x <- res.x$res[, prob.SVM_LDA := (prob.SVM + prob.LDA)/2]
+res.x[, status.SVM_LDA := ifelse(prob.SVM_LDA > 0.5, "COVID.pred", "Negative.pred")]
 
-# res.x <- res.x$res[, prob.ENS.LOG := (prob.SVM + prob.LOG)/2]
-# res.x[, status.ENS.LOG := ifelse(prob.ENS.LOG > 0.5, "COVID.pred", "Negative.pred")]
+# res.x <- res.x$res[, prob.SVM_LDA.LOG := (prob.SVM + prob.LOG)/2]
+# res.x[, status.SVM_LDA.LOG := ifelse(prob.SVM_LDA.LOG > 0.5, "COVID.pred", "Negative.pred")]
 
 saveRDS(res.x, file = file.path(d,"predictions_on_test_set_no_12.rds"))
 save(lda.mod, svm.mod, log.mod, svm2.mod, file = file.path(d,"no_12_models.RData"))
@@ -96,7 +96,7 @@ save(lda.mod, svm.mod, log.mod, svm2.mod, file = file.path(d,"no_12_models.RData
 #END OF MODEL FITTING
 
 ## #PLOT
-dres <- melt(res.x, measure.vars = c("status.SVM", "status.SVM2","status.LDA", "status.LOG","status.ENS"))
+dres <- melt(res.x, measure.vars = c("status.SVM", "status.SVM2","status.LDA", "status.LOG","status.SVM_LDA"))
 dres[, method := sub("status\\.", "", variable)]
 setnames(dres, "value", "status")
 
@@ -104,7 +104,7 @@ train.ind <- dat$type %in% c("COVID", "Historical.controls")
 ddat <- dat[train.ind, 1 : 8]
 ddat[, status := type]
 ddat <- rbind(ddat, ddat, ddat)
-ddat[, method := rep(c("LDA", "SVM", "SVM2", "LOG", "ENS"), len = nrow(ddat))]
+ddat[, method := rep(c("LDA", "SVM", "SVM2", "LOG", "SVM_LDA"), len = nrow(ddat))]
 
 X <- rbind(dres[, c("SPIKE", "RBD", "method", "status")], ddat[, c("SPIKE", "RBD", "method", "status")])
 

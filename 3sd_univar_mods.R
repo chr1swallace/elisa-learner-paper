@@ -100,13 +100,13 @@ save(mod.rbd, mod.spk, mod.rbd.x, mod.spk.x, file = file.path(d,"full_univar_mod
 res <- res$res
 res.x <- res.x$res
 
-res[ , c("prob.ENS.rbd", "prob.ENS.spk") := list((prob.LDA.rbd + prob.SVM.rbd)/2, (prob.LDA.spk + prob.SVM.spk)/2)]
-res[, c("status.ENS.rbd", "status.ENS.spk") := list(ifelse(prob.ENS.rbd > 0.5, "COVID.pred", "Negative.pred"), ifelse(prob.ENS.spk > 0.5, "COVID.pred", "Negative.pred"))]
+res[ , c("prob.SVM_LDA.rbd", "prob.SVM_LDA.spk") := list((prob.LDA.rbd + prob.SVM.rbd)/2, (prob.LDA.spk + prob.SVM.spk)/2)]
+res[, c("status.SVM_LDA.rbd", "status.SVM_LDA.spk") := list(ifelse(prob.SVM_LDA.rbd > 0.5, "COVID.pred", "Negative.pred"), ifelse(prob.SVM_LDA.spk > 0.5, "COVID.pred", "Negative.pred"))]
 
 res[, c("status.SD3.rbd", "status.SD3.spk", "status.6SD.rbd", "status.6SD.spk") := list(pred.rbd.3sd, pred.spk.3sd, pred.rbd.6sd, pred.spk.6sd)]
 
-res.x[ , c("prob.ENS.rbd", "prob.ENS.spk") := list((prob.LDA.rbd + prob.SVM.rbd)/2, (prob.LDA.spk + prob.SVM.spk)/2)]
-res.x[, c("status.ENS.rbd", "status.ENS.spk") := list(ifelse(prob.ENS.rbd > 0.5, "COVID.pred", "Negative.pred"), ifelse(prob.ENS.spk > 0.5, "COVID.pred", "Negative.pred"))]
+res.x[ , c("prob.SVM_LDA.rbd", "prob.SVM_LDA.spk") := list((prob.LDA.rbd + prob.SVM.rbd)/2, (prob.LDA.spk + prob.SVM.spk)/2)]
+res.x[, c("status.SVM_LDA.rbd", "status.SVM_LDA.spk") := list(ifelse(prob.SVM_LDA.rbd > 0.5, "COVID.pred", "Negative.pred"), ifelse(prob.SVM_LDA.spk > 0.5, "COVID.pred", "Negative.pred"))]
 
 
 save(res, res.x, file = file.path(d,"full_univar_preds.Rdata"))

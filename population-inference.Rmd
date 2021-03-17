@@ -200,7 +200,11 @@ ggplot(pred[type!="Combined" & Week!="Combined"],aes(x=week_num2+as.numeric(fact
   geom_pointrange() +
   labs(x="Week",y="Estimated fraction positive") +
   background_grid(major="y") + scale_colour_seaborn()
+```
 
+Confidence intervals are slightly smaller, and the increasing pattern slightly clearer when we combine pregnant volunteers and blood donors.
+
+```{r}
 ggplot(pred[type=="Combined" & Week!="Combined"],aes(x=week_num2,
                                   y=qm,ymin=ll,ymax=ul)) +
   geom_pointrange() +

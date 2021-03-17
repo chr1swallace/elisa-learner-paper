@@ -195,18 +195,18 @@ res.x <- lapply(1 : f, FUN = function(i) data.table(dat.x, foo.x(i)))
 #ENSEMBLE: SVM + LDA
 
 res <- lapply(res, FUN = function(z) {
-  z[, pr.ens := 1/2 * (pr.svmlin + pr.lda)]
-  z[, pred.ens := ifelse(pr.ens > 0.5, "COVID", "Historical.controls")]
+  z[, pr.svmlin_lda := 1/2 * (pr.svmlin + pr.lda)]
+  z[, pred.svmlin_lda := ifelse(pr.svmlin_lda > 0.5, "COVID", "Historical.controls")]
 
-  z[, pr.ens.log := 1/2 * (pr.svmlin + pr.logreg)]
-  z[, pred.ens.log := ifelse(pr.ens.log > 0.5, "COVID", "Historical.controls")]
+  z[, pr.svmlin_lda.log := 1/2 * (pr.svmlin + pr.logreg)]
+  z[, pred.svmlin_lda.log := ifelse(pr.svmlin_lda.log > 0.5, "COVID", "Historical.controls")]
 })
 res.x <- lapply(res.x, FUN = function(z) {
-  z[, pr.ens := 1/2 * (pr.svmlin + pr.lda)]
-  z[, pred.ens := ifelse(pr.ens > 0.5, "COVID", "Historical.controls")]
+  z[, pr.svmlin_lda := 1/2 * (pr.svmlin + pr.lda)]
+  z[, pred.svmlin_lda := ifelse(pr.svmlin_lda > 0.5, "COVID", "Historical.controls")]
 
-  z[, pr.ens.log := 1/2 * (pr.svmlin + pr.logreg)]
-  z[, pred.ens.log := ifelse(pr.ens.log > 0.5, "COVID", "Historical.controls")]
+  z[, pr.svmlin_lda.log := 1/2 * (pr.svmlin + pr.logreg)]
+  z[, pred.svmlin_lda.log := ifelse(pr.svmlin_lda.log > 0.5, "COVID", "Historical.controls")]
 })
 
 save(res, res.x, file = file.path(d,"ml_results.RData"))
