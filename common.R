@@ -6,7 +6,8 @@ library(cowplot); theme_set(theme_cowplot())
 ## data location
 dsp <- "~/rds/rds-cew54-wallace-share/Data/elisa-learner-in" # input data, seroprevalence-paper data
 d <- "~/rds/rds-cew54-wallace-share/Data/elisa-learner-out" # output data on this project
-NFOLDS <- 9
+NFOLDS <- 9 # number of different fold strategies
+NFOLD_REPS <- 10 # number of fold values
 list.files(d)
 
 ## pregnant and blood donors

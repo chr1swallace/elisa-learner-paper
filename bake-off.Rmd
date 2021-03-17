@@ -21,11 +21,14 @@ library(caret)
 knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
                       echo=FALSE, warning=FALSE, message=FALSE)
 source("common.R")
-print(d)
 
 ## stas methods
 (load(file.path(d,"ml_results.RData")))
+names(res.x[[1]])
+
 (load(file.path(d,"univar_results.RData")))
+names(res.spk.x[[1]])
+
  tab.all=with(res[[1]], table(type))
  tab.unq=with(res[[1]][!duplicated(Sample.ID)], table(type))
 for(i in seq_along(res.x)) {
@@ -52,20 +55,23 @@ res.spk <- res.spk[Sample.ID %in% res.x$Sample.ID]
 identical(res$Sample.ID,res.rbd$Sample.ID)
 identical(res$Sample.ID,res.x$Sample.ID)
 identical(res$Sample.ID,res.spk$Sample.ID)
+names(res.x)
+names(res.rbd.x)
+names(res.rbd)
 res.x <- cbind(res.x,
                res.rbd.x[,.(pr.logreg.rbd=pr.logreg,
                         pr.svmlin.rbd=pr.svm,
                         ## pr.svmquad.rbd=pr.svm2,
                         pr.lda.rbd=pr.lda,
-                        pr.ens.log.rbd=pr.ens.log,
-                        pr.ens.rbd=pr.ens
+                        pr.svmlin_logreg.rbd=pr.svmlin_logreg,
+                        pr.svmlin_lda.rbd=pr.svmlin_lda
                         )],
                res.spk.x[,.(pr.logreg.spk=pr.logreg,
                             pr.svmlin.spk=pr.svm,
                         ## pr.svmlin.rbd=pr.svm2,
                             pr.lda.spk=pr.lda,
-                            pr.ens.log.spk=pr.ens.log,
-                            pr.ens.spk=pr.ens
+                            pr.svmlin_logreg.spk=pr.svmlin_logreg,
+                            pr.svmlin_lda.spk=pr.svmlin_lda
                             )],
                res.rbd[,.(pr.3sd.rbd=ifelse(pred.3sd=="COVID.pred",1,0),
                           pr.6sd.rbd=ifelse(pred.6sd=="COVID.pred",1,0))],
@@ -74,8 +80,8 @@ res.x <- cbind(res.x,
 
 res.x[,pr.3sd:=pr.3sd.rbd * pr.3sd.spk]
 res.x[,pr.6sd:=pr.6sd.rbd * pr.6sd.spk]
-res.x[,pr.ens2:=(pr.svm2+pr.lda)/2]
-res.x[,pr.loglda:=(pr.logreg+pr.lda)/2]
+res.x[,pr.svm2_lda:=(pr.svm2+pr.lda)/2]
+res.x[,pr.logreg_lda:=(pr.logreg+pr.lda)/2]
 
 res.x <- melt(res.x,
             c("fold.nm","SPIKE","RBD","group","type"),
@@ -86,7 +92,7 @@ res.x[,method:=sub("pr.","",method)]
 head(res.x)
 
 table(res.x$method)
-res.x[,method:=sub("ens.log","enslog",method)]
+## res.x[,method:=sub("ens.log","enslog",method)]
 
 dt <- res.x
 dt[,type:=sub("Historical.controls","Historical.controls",type)]
@@ -112,8 +118,8 @@ comb[,protein:="Both"]
 comb[grep("rbd",method),protein:="RBD"]
 comb[grep("spk",method),protein:="SPIKE"]
 
-comb[method=="ens"]
-comb[method=="ens2"]
+## comb[method=="ens"]
+## comb[method=="ens2"]
 ```
 # Results
 
@@ -279,7 +285,7 @@ p2
 This is a close up of the decision boundary for the final ensemble and its parents
 
 ```{r}
-prob.grd=prob.grd[method %in% c("LDA","SVM","ENS")]
+prob.grd=prob.grd[method %in% c("LDA","SVM","SVM_LDA")]
 p3=ggplot() +
 geom_contour(data = prob.grd, aes(x = RBD, y = SPIKE, z = covid.prob, colour = ..level..), show.legend = FALSE) +
 scale_color_gradient(low = myCol2[3], high = myCol2[1]) +

@@ -5,6 +5,7 @@ library(kernlab)
 library(caret)
 library(parallel)
 
+message("loading ",basename(file_rdata))
 (load(file_rdata)) #m
 m[, type:=make.names(type)]
 #type: historical controls = controls, covid = cases.
@@ -18,12 +19,12 @@ table(m$type)
 #----------------------------------------------------------------------------------------------------------
 #LOGISTIC REGRESSION
 #logistic: 0 = COVID, 1 = historical
-#prot = {RBD, SPIKE}
+                                        #prot = {RBD, SPIKE}
 run.logreg <- function(dat, k, prot) {
   fold <- paste0("fold", k)
   out <- data.table(dat[, c("Sample.ID", "type")], fold = dat[, get(fold)], method = "LOG", fold.n = k, protein = prot, prob.covid = vector("numeric", nrow(dat)), pred = vector("character", nrow(dat)))
 
-  mod.output <- lapply(1 : 10, FUN = function(i) {
+  mod.output <- lapply(1 : NFOLD_REPS, FUN = function(i) {
     message(sprintf("fold%s: %s", k, i))
     if(prot == "RBD") {
       mod <- glm(data = dat[get(fold) != i,], factor(type) ~ log(RBD), family = binomial, maxit = 100)
@@ -34,7 +35,7 @@ run.logreg <- function(dat, k, prot) {
     list(mod = mod, prob = prob)
   })
 
-  for(i in 1 : 10) {
+  for(i in 1 : NFOLD_REPS) {
     message(i)
     out[fold == i, prob.covid := mod.output[[i]]$prob]
     out[fold == i, pred := ifelse(prob.covid > 0.5, "COVID", "Historical.controls")]
@@ -59,7 +60,7 @@ run.mod <- function(dat, k, method, grd = NULL, ctrl = NULL, prot) {
                     prob.covid = vector("numeric", nrow(dat)),
                     pred = vector("character", nrow(dat)))
 
-  mod.output <- lapply(1 : 10, FUN = function(i) {
+  mod.output <- lapply(1 : NFOLD_REPS, FUN = function(i) {
     message(sprintf("%s: fold%s %s", method, k, i))
     dat.train <- dat[get(fold) != i,]
     dat.test <- dat[get(fold) == i,]
@@ -80,7 +81,7 @@ run.mod <- function(dat, k, method, grd = NULL, ctrl = NULL, prot) {
     list(mod = mod, prob = pred$COVID)
   })
 
-  for(i in 1 : 10) {
+  for(i in 1 : NFOLD_REPS) {
     message(i)
     out[fold == i, prob.covid := mod.output[[i]]$prob]
     out[fold == i, pred := ifelse(prob.covid > 0.5, "COVID", "Historical.controls")]
@@ -94,9 +95,12 @@ run.mod <- function(dat, k, method, grd = NULL, ctrl = NULL, prot) {
 
 run.sd <- function(dat, k, prot, d) {
   fold <- paste0("fold", k)
-  out <- data.table(dat[,c("Sample.ID", "type")], fold = dat[,get(fold)], method = paste0("SD", k), fold.n = k, protein = prot, prob.covid = vector("numeric", nrow(dat)), pred = vector("character", nrow(dat)))
+  out <- data.table(dat[,c("Sample.ID", "type")], fold = dat[,get(fold)],
+                    method = paste0("SD", k), fold.n = k,
+                    protein = prot, prob.covid = vector("numeric", nrow(dat)),
+                    pred = vector("character", nrow(dat)))
 
-  mod.output <- lapply(1 : 10, FUN = function(i) {
+  mod.output <- lapply(1 : NFOLD_REPS, FUN = function(i) {
     message(sprintf("fold%s: %s", k, i))
     if(prot == "RBD") {
       rbd <- dat[get(fold) != i & type == "Historical.controls",]$RBD
@@ -110,7 +114,7 @@ run.sd <- function(dat, k, prot, d) {
       pred
   })
 
-  for(i in 1 : 10) {
+  for(i in 1 : NFOLD_REPS) {
     message(i)
     out[fold == i, pred := mod.output[[i]]]
   }
@@ -194,32 +198,32 @@ res.rbd.x <- lapply(1 : NFOLDS, FUN = function(i) data.table(dat.x, foo.rbd.x(i)
 res.spk.x <- lapply(1 : NFOLDS, FUN = function(i) data.table(dat.x, foo.spk.x(i)))
 
 res.rbd <- lapply(res.rbd, FUN = function(z) {
-  z[, pr.ens := 1/2 * (pr.svm + pr.lda)]
-  z[, pred.ens := ifelse(pr.ens > 0.5, "COVID", "Historical.controls")]
+  z[, pr.svmlin_lda := 1/2 * (pr.svm + pr.lda)]
+  z[, pred.svmlin_lda := ifelse(pr.svmlin_lda > 0.5, "COVID", "Historical.controls")]
 
-  z[, pr.ens.log := 1/2 * (pr.svm + pr.logreg)]
-  z[, pred.ens.log := ifelse(pr.ens.log > 0.5, "COVID", "Historical.controls")]
+  z[, pr.svmlin_logreg := 1/2 * (pr.svm + pr.logreg)]
+  z[, pred.svmlin_logreg := ifelse(pr.svmlin_logreg > 0.5, "COVID", "Historical.controls")]
 })
 res.rbd.x <- lapply(res.rbd.x, FUN = function(z) {
-  z[, pr.ens := 1/2 * (pr.svm + pr.lda)]
-  z[, pred.ens := ifelse(pr.ens > 0.5, "COVID", "Historical.controls")]
+  z[, pr.svmlin_lda := 1/2 * (pr.svm + pr.lda)]
+  z[, pred.svmlin_lda := ifelse(pr.svmlin_lda > 0.5, "COVID", "Historical.controls")]
 
-  z[, pr.ens.log := 1/2 * (pr.svm + pr.logreg)]
-  z[, pred.ens.log := ifelse(pr.ens.log > 0.5, "COVID", "Historical.controls")]
+  z[, pr.svmlin_logreg := 1/2 * (pr.svm + pr.logreg)]
+  z[, pred.svmlin_logreg := ifelse(pr.svmlin_logreg > 0.5, "COVID", "Historical.controls")]
 })
 res.spk <- lapply(res.spk, FUN = function(z) {
-  z[, pr.ens := 1/2 * (pr.svm + pr.lda)]
-  z[, pred.ens := ifelse(pr.ens > 0.5, "COVID", "Historical.controls")]
+  z[, pr.svmlin_lda := 1/2 * (pr.svm + pr.lda)]
+  z[, pred.svmlin_lda := ifelse(pr.svmlin_lda > 0.5, "COVID", "Historical.controls")]
 
-  z[, pr.ens.log := 1/2 * (pr.svm + pr.logreg)]
-  z[, pred.ens.log := ifelse(pr.ens.log > 0.5, "COVID", "Historical.controls")]
+  z[, pr.svmlin_logreg := 1/2 * (pr.svm + pr.logreg)]
+  z[, pred.svmlin_logreg := ifelse(pr.svmlin_logreg > 0.5, "COVID", "Historical.controls")]
 })
 res.spk.x <- lapply(res.spk.x, FUN = function(z) {
-  z[, pr.ens := 1/2 * (pr.svm + pr.lda)]
-  z[, pred.ens := ifelse(pr.ens > 0.5, "COVID", "Historical.controls")]
+  z[, pr.svmlin_lda := 1/2 * (pr.svm + pr.lda)]
+  z[, pred.svmlin_lda := ifelse(pr.svmlin_lda > 0.5, "COVID", "Historical.controls")]
 
-  z[, pr.ens.log := 1/2 * (pr.svm + pr.logreg)]
-  z[, pred.ens.log := ifelse(pr.ens.log > 0.5, "COVID", "Historical.controls")]
+  z[, pr.svmlin_logreg := 1/2 * (pr.svm + pr.logreg)]
+  z[, pred.svmlin_logreg := ifelse(pr.svmlin_logreg > 0.5, "COVID", "Historical.controls")]
 })
 
 

@@ -29,7 +29,7 @@ rbd.seq <- seq(min(log(dat$RBD)), max(log(dat$RBD)), len = 50)
 grd <- expand.grid(SPIKE = exp(spike.seq), RBD = exp(rbd.seq))
 
 
-(load("~/rds/rds-cew54-wallace-share/Data/elisa/no_12_models.RData")) #lda.mod, svm.mod
+(load(file.path(d,"no_12_models.RData"))
 
 prob.grd <- lapply(1 : nrow(grd), FUN = function(i) {
   message(i)
