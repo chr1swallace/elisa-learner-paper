@@ -35,8 +35,10 @@ x <- file.path(d,"predictions_on_test_set_no_12.rds")  %>% readRDS()
 with(x,table(group,type))
 x[,type:=sub("\\."," ",type)]
 x[,Sample.ID:=gsub("wk|WK","Wk",Sample.ID)] # typo
+sample(x$Sample.ID,100)
 x[grep("Wk",Sample.ID), Week:=sub(".*(Wk[0-9]+).*","\\1",Sample.ID) ]
 x[,prob.ENS:=(prob.SVM+prob.LDA)/2]
+table(x$Week)
 x=x[Week!="Wk14"]
 
 ## add 3sd double positives
@@ -174,8 +176,9 @@ tmp
 setnames(tmp,make.names(names(tmp)))
 tmp[,.(bd=mean(Blood.donors),pv=mean(Pregnant.volunteers))]
 
+pred[,week_num2:=ifelse(week_num < 14, week_num + 52, week_num)]
 
-ggplot(pred[type=="Combined" & Week!="Combined"],aes(x=week_num,y=qm,ymin=ll,ymax=ul#,col=type
+ggplot(pred[type=="Combined" & Week!="Combined"],aes(x=week_num2,y=qm,ymin=ll,ymax=ul#,col=type
                                   )) +
   ## geom_smooth(se=FALSE,
   ##             ## method="lm",formula=y~poly(x,3),
@@ -192,8 +195,14 @@ We estimated the proportion of positives in each group using multiple imputation
 
 ```{r}
 library(seaborn)
-ggplot(pred[type!="Combined" & Week!="Combined"],aes(x=week_num+as.numeric(factor(type))/10,
+ggplot(pred[type!="Combined" & Week!="Combined"],aes(x=week_num2+as.numeric(factor(type))/10,
                                   y=qm,ymin=ll,ymax=ul,col=type)) +
+  geom_pointrange() +
+  labs(x="Week",y="Estimated fraction positive") +
+  background_grid(major="y") + scale_colour_seaborn()
+
+ggplot(pred[type=="Combined" & Week!="Combined"],aes(x=week_num2,
+                                  y=qm,ymin=ll,ymax=ul)) +
   geom_pointrange() +
   labs(x="Week",y="Estimated fraction positive") +
   background_grid(major="y") + scale_colour_seaborn()
