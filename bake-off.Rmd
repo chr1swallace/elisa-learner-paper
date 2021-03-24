@@ -101,9 +101,11 @@ dt[,fold.type:=ifelse(fold.nm %in% paste0("fold",1:3),"stratified",
                       ifelse(fold.nm %in% paste0("fold",4:6),"random", "unbalanced"))]
 
 ## print best for comparison
-best <- dt[,.(mean.pcovid=mean(pcovid)),
-           by=c("type","method","fold.type")][,
-error:=ifelse(type=="COVID",1-mean.pcovid,mean.pcovid)]
+library(Hmisc)
+best <- dt[,.(mean.pcovid=mean(pcovid),
+              n=.N),
+           by=c("type","method","fold.type")]
+best[,error:=ifelse(type=="COVID",1-mean.pcovid,mean.pcovid)]
 
 options(digits=3)
 best[order(type,error)]
@@ -111,13 +113,44 @@ best[order(type,error)]
 library(ggrepel)
 
 comb <- dcast(best,method+fold.type ~ type,value.var="mean.pcovid")
-comb[,sensitivity:=COVID][,specificity:=1-Historical.controls]
+setnames(comb,c("COVID","Historical.controls"),c("sensitivity","specificity"))
+## [,sensitivity:=COVID][,specificity:=1-Historical.controls]
 fwrite(comb,file.path(d,"bake-off.csv"))
 comb[,methodbase:=sub("\\..*","",method)]
 comb[,protein:="Both"]
 comb[grep("rbd",method),protein:="RBD"]
 comb[grep("spk",method),protein:="SPIKE"]
 
+
+```
+
+Now calculate sens/spec using thresholded probabilities (> or < .5), and add 95% CI.
+```r
+best <- dt[,.(mean.pcovid=mean(pcovid),
+              threshold.pcovid=mean(pcovid>0.5), ## TODO need to do this by FOLD
+              n=.N),
+           by=c("type","method","fold.type","fold.nm")]
+best[type=="Historical.controls",threshold.pcovid:=1-threshold.pcovid]
+best[,threshold.se:=sqrt(threshold.pcovid * (1-threshold.pcovid) / n)]
+ci=with(best, binconf(threshold.pcovid*n, n, method="wilson"))
+best[,threshold.lower:=ci[,"Lower"]][,threshold.upper:=ci[,"Upper"]]
+
+## average over folds
+best=best[,.(pcovid=mean(threshold.pcovid),
+            lower=mean(threshold.lower), 
+            upper=mean(threshold.upper)),
+          by=c("type","method")]
+best[type=="Historical.controls",type:="specificity"]
+best[type=="COVID",type:="sensitivity"]
+thresholded <- dcast(best,method ~ type,
+                     value.var=c("pcovid", "lower", "upper"))
+head(thresholded)
+fwrite(thresholded[,.(method,
+                      pcovid_sensitivity,lower_sensitivity,upper_sensitivity,
+                      pcovid_specificity,lower_specificity,upper_specificity)],
+       file=file.path(d,"spec-sens+ci.csv"))
+
+                      
 ## comb[method=="ens"]
 ## comb[method=="ens2"]
 ```
